@@ -50,7 +50,7 @@ class ADBBot:
         if os.path.exists("config.toml"):
             logger.info("读取配置文件: config.toml")
             
-            with open("config.toml", "r") as f:
+            with open("config.toml", "r", encoding="utf8") as f:
                 config_data = f.read()
             
             try:
@@ -422,16 +422,13 @@ class ADBBot:
         self.seq += 1
 
 @logger.catch
-def error(exc_type, exc_value, *args, **kwargs):
-    if exc_type == KeyboardInterrupt:
+def main():
+    try:
+        bot = ADBBot()
+        asyncio.run(bot.start())
+    except KeyboardInterrupt:
         logger.info("退出程序...")
         sys.exit(0)
-    else:
-        # 按原样返回
-        raise exc_type(exc_value)
-
-sys.excepthook = error
 
 if __name__ == "__main__":
-    bot = ADBBot()
-    asyncio.run(bot.start())
+    main()
