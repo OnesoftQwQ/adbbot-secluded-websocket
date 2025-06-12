@@ -184,9 +184,11 @@ class ADBBot:
         if origin_message["cmd"] == "PushOicqMsg": # 消息
             data: list[dict] = origin_message["data"]
             
-            if "Heartbeat" in data[0].keys() or "System" in data[0].keys():
+            if "Heartbeat" in data[0].keys():
                 # 我服了消息类型什么区分都没有, 就靠一个 "Heartbeat" 来区分心跳包, 真神经
                 logger.info("收到心跳包")
+                return
+            elif "System" in data[0].keys():
                 return
 
             # 初始化信息变量
@@ -204,7 +206,7 @@ class ADBBot:
                 if i == 0: # data 的第一项包含账户信息等信息
                     account = x["Account"]
                     is_group = "Group" in x.keys()
-                    msg_id = x["MsgId"]
+                    msg_id = x.get("MsgId", 0) # 撤回消息的事件会没有 MsgId, 这B框架没事件分类/消息分类的很麻烦
                     user_id = x["Uin"]
                     user_name = x["UinName"]
                     if is_group:
