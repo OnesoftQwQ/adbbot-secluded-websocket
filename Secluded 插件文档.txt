@@ -1,0 +1,433 @@
+本文是 Secluded 插件实现的一个详解
+Secluded 插件主要是基于 WebSocket 实现的
+也就是说 任何可以编写 WebSocket 的编程语言 都可以来写 Secluded 插件
+
+首先你得熟悉 WebSocket 才能理解下面的说明
+
+当您的 WebSocket 与 Secluded 建立连接时
+您的 WebSocket 生命周期 onOpen 会触发
+
+这时候 需要 发送一个插件上线包 如下
+
+{"seq":1,"cmd":"SyncOicq","rsp":true,"data":{"pid":"secluded.plugin.demo","name":"demo-java","token":"SecretToken"}}
+
+seq:包序号每次发包+1
+cmd:上线包标识 固定
+rsp:需要应答包 固定
+pid:插件id 唯一标识
+name:插件名称
+token:口令 需要从 Secluded 控制台获取
+
+当发包成功之后 会收到一个应答包 如下
+
+{"seq":1,"cmd":"Response","data":{"status":true}}
+
+seq:对应发包序号
+cmd:应答包标识 固定
+status:当true时插件上线成功 false时口令错误
+
+当口令错误时 这边需要插件关闭 WebSocket
+当上线成功时 Secluded 开始对 插件 推送消息
+
+
+此时需要新建线程 对 onMessage 事件一直接收消息
+
+
+收到 消息包 如下
+
+{"cmd":"PushOicqMsg","cmd-ver":"2024-08-04","data":[{"Account":"2227238106","Bubble":"0","Debug":"Debug","Group":"Group","GroupId":"699826114","GroupName":"②有时候我感觉到你的","MsgId":"546170","MsgType":"82","Op":"3337140142","OpName":"MCSQNXA","OpUid":"u_E5D4n5vA54_DTlMgZn7X1w","Title":"胖金哥","Typeface":"宋体","Uid":"u_E5D4n5vA54_DTlMgZn7X1w","Uin":"3337140142","UinName":"给你一杯薄荷茶","UserGolineMode":"3"},{"Text":"菜单"}]}
+
+cmd:消息包推送 固定
+cmd-ver:协议版本
+data:消息内容
+
+data 格式如下 [{...},{...},{...},...]
+
+{} 里面的键值全部采用字符串格式
+
+下面是详细说明
+
+
+AtAll   //艾特全体成员
+AtUin   //被艾特账号
+AtName   //被艾特昵称
+Id   //ID
+Ok   //状态码
+No   //状态码
+Op   //操作
+OpUid   //操作
+All   //所有
+Get   //得到
+Gif   //动图
+Img   //图片
+Ptt   //语音
+Uid   //账号
+Uin   //账号
+Url   //链接
+Xml   //XML
+Code   //码
+Info   //信息
+Json   //JSON
+Text   //文本消息
+Temp   //临时消息
+Time   //时间
+Type   //类型
+Emoid   //表情id
+Flash   //闪图
+MsgId   //消息id
+Reply   //回复
+Title   //用户头衔
+Value   //值
+Audio   //音频
+Video   //视频
+Width   //宽度
+Bubble   //气泡id
+Heigth   //高度
+Notice   //公告
+People   //人数
+Refresh   //刷新
+UinName   //名称 备注.....
+UinNick   //昵称
+Typeface   //字体
+Withdraw   //撤回
+OpName   //操作者名字
+OpNick   //操作者昵称
+Agree   //同意
+Refuse   //拒绝
+Ignore   //忽略
+Account   //登录账号
+Open   //打开
+Close   //关闭
+MD5   //MD5
+Size   //大小
+Offset   //开始
+Add   //增加
+Remove   //移除
+Seq   //序号
+EmojiFace   //小黄脸表情
+EmojiSuper   //超级表情
+EmojiSuperQQ   //[超级QQ秀表情]OK
+ProgressPush   //进度推送
+PokeID   //戳一戳id
+PokeIDSub   //戳一戳子id
+PokeMsg   //戳一戳消息
+PokeSize   //戳一戳大小
+Dice   //骰子
+WindowJitter   //窗口抖动
+FlashWord   //闪字
+FingerGuess   //猜拳
+HeadPortrait   //头像
+AppId   //账号
+
+
+MultiMsg   //消息合并转发
+MultiMsgGet   //消息合并转发 获取
+MultiMsgPut   //消息合并转发 保存
+
+
+Friend   //好友消息
+FriendListDisable   //好友禁用列表
+FriendListGet   //获取好友列表
+FriendListGetName   //获取好友备注
+FriendListGetNick   //获取好友昵称
+FriendBeatABeat   //好友拍一拍
+FriendMsgCacheGet   //获取好友消息缓存
+
+
+Group   //群聊消息
+Owner   //群主/频道主 QQ
+GroupId   //群号
+GroupName   //群名
+GroupListDisable   //群聊禁用列表
+GroupListGet   //获取群聊列表
+GroupListGetName   //获取群聊名称
+GroupMemberListGet   //获取群聊成员列表
+GroupMemberListGetAdmin   //获取群聊管理员列表
+GroupMemberListGetInactive   //获取群聊成员不活跃列表
+GroupMemberListGetProhibit   //获取群聊成员被禁言列表
+GroupMemberListGetInfo   //获取群聊成员信息
+GroupMemberSignout   //群聊成员退出
+GroupMemberNickModify   //修改群聊成员昵称
+GroupModifyAdmin   //群聊管理员修改
+GroupModifySpecialTitle   //修改群聊专属头衔
+GroupNotify   //群通知
+GroupProhibitAll   //群聊全体禁言
+GroupProhibitMember   //群聊成员禁言
+GroupMsgCacheGet   //获取群聊消息缓存
+GroupMsgAnonymous   //群聊消息匿名
+GroupMsgSetNotDisturb   //设置群聊消息 免打扰   携带 Msg.GroupId 群号   Msg.Open 打开   Msg.Close 关闭
+GroupAnonymous   //群聊匿名开关变动
+GroupEnterState   //进群状态(账户可以不在目标群聊) 允许任何人加群 需要发送验证消息 不允许任何人加群..........
+GroupInvitationFriend   //邀请好友进群
+GroupNewMember   //群聊新成员进群通知
+GroupMusic   //一起听歌开关变动
+GroupBeatABeat   //群聊拍一拍
+GroupEssence   //群聊精华
+GroupDissolut   //群聊解散
+GroupClockin   //群聊打卡
+
+
+GroupFile   //群文件
+GroupFileListGet   //获取列表
+GroupFileUpload   //上传文件
+GroupFileCreate   //创建文件夹
+GroupFileRemove   //删除文件
+GroupFileRemoveFolder   //删除文件夹
+GroupFileMove   //移动文件
+GroupFileRename   //重命名文件夹
+
+
+GroupStick   //群帖子
+
+
+Guild   //频道消息
+TinyId   //   //频道 用户 id
+GuildId   //频道 id
+GuildCode   //频道 id 号
+ChannelId   //频道 id 子
+GuildType   //频道 type
+GuildName   //频道名
+ChannelName   //频道名 子
+GuildMsgCacheGet   //获取频道消息缓存
+GuildMemberSignout   //频道成员退出
+GuildEssence   //频道精华
+
+
+System   //系统消息
+Online   //查询在线状态
+Goline   //账号上线
+GolineRetry   //重新上线
+Offline   //账号下线
+GolineWindows   //Windows端 账号上线
+OfflineWindows   //Windows端 账号下线
+Heartbeat   //心跳消息
+HeartbeatLong   //长连心跳消息
+FavoriteCard   //名片赞
+FavoriteCardListGet   //名片赞列表获取
+FavoritePersonSign   //个性签名赞
+NewFriendNotify   //新朋友通知
+UserSearch   //搜索
+UserInfoGet   //获取上线信息
+UserInfoModify   //修改用户信息 可携带 Nick Gender ...
+UserGroupJoin   //加群
+UserGroupSignout   //退群
+UserFriendAdd   //加好友
+UserFriendRemove   //删除好友
+UserSigninDay   //日签卡 打卡
+UserSigninNight   //晚安卡 打卡
+UserGolineMode   //上线模式
+OntimeTask   //整点任务
+
+
+Qzone   //空间消息
+SaySay   //说说
+
+
+Skey   //Skey   pskey在用户信息获取
+Age   //年龄
+Gender   //性别
+Nick   //昵称
+Name   //备注
+MemberLevel   //成员等级
+JoinTime   //加入时间
+LastSpeakTime   //最后发言时间
+SpecialTitle
+Level   //等级
+Location   //地区
+
+Debug   //调试模式
+CacheNewFile   //   //获取一个临时文件(一天后自动删除)
+Unauthorized   //未授权
+OicqWebScanCodeLogin   //网站扫码登录
+
+SignJson   //签名卡片
+CustomJson   //自定义JSON消息
+JSON_KG   //酷狗音乐 分享/音乐播放
+JSON_WY   //网易云音乐 分享/音乐播放
+JSON_QQ   //QQ音乐 分享/音乐播放
+JSON_KW   //酷我音乐 分享/音乐播放
+JSON_JSHU   //简书 分享/音乐播放
+JSON_BAIDU   //百度 分享/音乐播放
+JSON_YK   //优酷 分享/音乐播放
+JSON_IQY   //爱奇艺 分享/音乐播放
+JSON_BD   //波点 分享/音乐播放
+JSON_BL   //哔哩哔哩 分享/音乐播放
+JSON_KS   //快手 分享/音乐播放
+JSON_MG   //咪咕 分享/音乐播放
+JSON_QQLLQ   //QQ浏览器 分享/音乐播放
+JSON_QQKJ   //QQ空间 分享/音乐播放
+JSON_5SING   //5SING 分享/音乐播放
+
+PrintE   //打印日志
+PrintI   //打印日志
+PrintV   //打印日志
+PrintW   //打印日志
+    
+GM_Unknown = -1;   //上线类型   未知
+GM_Official = 0;   //上线类型   官方人机
+GM_Android = 1;   //上线类型   安卓手机
+GM_AndroidPad = 2;   //上线类型   安卓平板
+GM_AndroidWatch = 3;   //上线类型   安卓手表 (扫码登陆)
+
+
+
+
+
+
+
+下面是发送群聊消息的一个简单例子
+
+{"seq":1,"cmd":"SendOicqMsg","rsp":true,"data":[{"Account":"2227238106","Group":"Group","Reply":"546170","MsgId":"546170","GroupId":"699826114"},{"Text":"文本内容"}]}
+
+seq:包序号每次发包+1
+cmd:发送消息的命令 固定
+rsp:需要应答包
+data:消息内容
+
+格式和接收消息差不多
+
+Account:登录账号 必须携带 来自接收包
+Group:群聊消息标识 必须携带 固定
+GroupId:目标群号 必须携带
+Reply:被回复消息的id 可以不用携带 来自接收包
+MsgId:消息id 官方人机 登录方式 必须携带 其他方式随意
+Text:文本消息
+
+当发包成功之后 会收到一个应答包 如下 必须通过包序号找包
+
+{"seq":5,"cmd":"Response","data":[{"Account":"2227238106","Group":"Group","GroupId":"699826114","MsgId":"546173","Ok":"Ok","Time":"1723174681"}]}
+
+MsgId:发送消息成功之后 自己那条消息的id
+
+这时候你就会发送一个简单的文本消息了
+
+
+
+
+发送群聊单张图片
+
+{"cmd":"SendOicqMsg","seq":3,"rsp":true,"data":[{"Account":"2227238106","Group":"Group","GroupId":"699826114"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3447801907&s=140"}]}
+
+Img:本地路径或链接
+
+
+
+发送群聊多张图片
+
+{"cmd":"SendOicqMsg","seq":3,"rsp":true,"data":[{"Account":"2227238106","Group":"Group","GroupId":"699826114"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3447801907&s=140"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3447801907&s=140"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3447801907&s=140"}]}
+
+Img:本地路径或链接
+每多一张图片就要加一个{}因为这样才能确保 QQ 显示图片的顺序问题
+
+
+
+发送群聊图文
+
+{"cmd":"SendOicqMsg","seq":3,"rsp":true,"data":[{"Account":"2227238106","Group":"Group","GroupId":"699826114"},{"Text":"文本内容"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3447801907&s=140"},{"Text":"文本内容"}]}
+
+这个可以随意加{}实现混合型消息
+
+
+
+
+
+
+发送群聊语音
+
+{"data":[{"Account":"2227238106","Group":"Group","Ptt":"https://m.kugou.com/api/v1/wechat/index?uuid=574d1101a331614d56f05f232dbb330d&album_audio_id=106863208&ext=m4a&apiver=2&cmd=101&album_id=8448864&hash=9d28faa0941c2e12c00dc4f8d20a7730&plat=0&version=11309&share_chl=qq_client&mid=304000542424130980213570746762493114069&key=8be2f563b18b4a8483ddc4ef4c4cd432&_t=1663479934&user_id=746798753&sign=c141a9e2a33a3215ea69346e7b633c70","Value":"sss","ProgressPush":"1723176882643","Time":"60","GroupId":"699826114"}],"cmd":"SendOicqMsg","seq":3,"rsp":true}
+
+Ptt:语音路径或者链接
+Time:语音时长 任意写
+Value:等级评价
+ProgressPush:上传进度回调 自定义id
+
+mp3格式 可以在 安卓QQ听    电脑和苹果不能收听 需要silk格式   暂时不支持自动转换格式
+
+
+
+
+
+发送群聊视频
+
+{"data":[{"Account":"2227238106","Group":"Group","Video":"S:/AAA.mp4","ProgressPush":"1723177260764","Time":"30","GroupId":"699826114","Name":"Sorry"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3337140142&s=140"}],"cmd":"SendOicqMsg","seq":3,"rsp":true}
+
+Video:视频路径或者链接 支持mp4 mkv 等等格式
+Img:视频封面 路径或者链接
+Time:视频时长 任意写
+Name:视频名字 大于短视频限制自动改发群文件 所需的名字
+ProgressPush:上传进度回调 自定义id
+
+
+
+Ok 这时候你已经会发送基本消息了
+
+发送好友消息 {"Group":"Group","GroupId":"群号",...} 修改成 {"Friend":"Friend","Uin":"好友QQ",...} 即可
+发送临时消息 {"Group":"Group","GroupId":"群号",...} 修改成 {"Temp":"Temp","GroupId":"群号","Uin":"群友QQ",...} 即可
+发送频道消息 {"Group":"Group","GroupId":"群号",...} 修改成 {"Guild":"Guild","GuildId":"频道号","ChannelId":"子频道号",...} 即可
+
+
+
+
+
+发送群聊播放器卡片
+
+{"data":[{"Account":"2227238106","Title":"我是标题","Info":"我是简介","Audio":"https://m.kugou.com/api/v1/wechat/index?uuid=574d1101a331614d56f05f232dbb330d&album_audio_id=106863208&ext=m4a&apiver=2&cmd=101&album_id=8448864&hash=9d28faa0941c2e12c00dc4f8d20a7730&plat=0&version=11309&share_chl=qq_client&mid=304000542424130980213570746762493114069&key=8be2f563b18b4a8483ddc4ef4c4cd432&_t=1663479934&user_id=746798753&sign=c141a9e2a33a3215ea69346e7b633c70","JSON_KG":"JSON_KG","Url":"https://q4.qlogo.cn/g?b=qq&nk=3337140142&s=140","GroupId":"699826114","CustomJson":"CustomJson"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3337140142&s=140"}],"cmd":"SendOicqMsg","seq":3,"rsp":true}
+
+CustomJson:卡片标识 必须携带
+Audio:音频链接
+JSON_KG:这个是类型 上面的消息有很多 可以根据自己需求修改
+
+
+
+
+
+
+发送群聊分享卡片
+
+{"data":[{"Account":"2227238106","Title":"我是标题","Info":"我是简介","JSON_KG":"JSON_KG","Url":"https://q4.qlogo.cn/g?b=qq&nk=3337140142&s=140","GroupId":"699826114","CustomJson":"CustomJson"},{"Img":"https://q4.qlogo.cn/g?b=qq&nk=3337140142&s=140"}],"cmd":"SendOicqMsg","seq":3,"rsp":true}
+
+这个和上面的播放器差不多
+不携带 Audio 字段就是分享
+
+
+如果要给好友发送
+GroupId改成Uin即可
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+向 Secluded 控制台 发送日志
+
+红色日志 {"data":"日志内容","cmd":"PrintE","seq":1,"rsp":false}
+白色日志 {"data":"日志内容","cmd":"PrintI","seq":1,"rsp":false}
+绿色日志 {"data":"日志内容","cmd":"PrintV","seq":1,"rsp":false}
+黄色日志 {"data":"日志内容","cmd":"PrintW","seq":1,"rsp":false}
+
+选择你想要的类型发送 没有应答包
+
+
+
+
+
+
+
+
+
+
+最后修改时间 v2024-08-09 12:39

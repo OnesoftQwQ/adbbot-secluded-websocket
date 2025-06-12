@@ -1,0 +1,3 @@
+url = "ws://127.0.0.1:8080" # 你的 Secluded 的 WebSocket 地址
+token = "your_token" # 你的 Secluded 的 Token
+enable_group_list = [] # 需要启用的群组列表, 留空表示不启用
