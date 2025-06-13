@@ -204,14 +204,14 @@ class ADBBot:
             # 解析消息内容
             for i,x in enumerate(data):
                 if i == 0: # data 的第一项包含账户信息等信息
-                    account = x["Account"]
+                    account = x.get("Account", 0)
                     is_group = "Group" in x.keys()
                     msg_id = x.get("MsgId", 0) # 撤回消息的事件会没有 MsgId, 这B框架没事件分类/消息分类的很麻烦
-                    user_id = x["Uin"]
-                    user_name = x["UinName"]
+                    user_id = x.get("Uin", 0)
+                    user_name = x.get("UinName", "")
                     if is_group:
-                        group_id = x["GroupId"]
-                        group_name = x["GroupName"]
+                        group_id = x.get("GroupId", 0)
+                        group_name = x.get("GroupName", "")
                     
                     if account == user_id: # 收到自己的消息
                         return
